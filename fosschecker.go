@@ -13,31 +13,31 @@ import (
 	"strings"
 )
 
-type Person struct {
+type person struct {
 	StudentNumber       string `json:"StudentNumber"`
 	FullName            string `json:"FullName"`
 	Email               string `json:"Email"`
 	UserName            string `json:"UserName"`
 	ProfileImageAddress string `json:"ProfileImageAddress"`
 	Department          string `json:"Department"`
-	AadObjectId         string `json:"AadObjectId"`
+	AadObjectID         string `json:"AadObjectId"`
 	UserPrincipleName   string `json:"UserPrincipleName"`
 	ItemSource          string `json:"ItemSource"`
 }
 
-func (p Person) toCsv() string {
+func (p person) toCsv() string {
 	return p.StudentNumber + "," +
 		p.FullName + "," +
 		p.Email + "," +
 		p.UserName + "," +
 		p.ProfileImageAddress + ",\"" +
 		p.Department + "\"," +
-		p.AadObjectId + "," +
+		p.AadObjectID + "," +
 		p.UserPrincipleName + "," +
 		p.ItemSource
 }
-func getJSON(studentNr string, cookie string) (Person, error) {
-	pers := Person{}
+func getJSON(studentNr string, cookie string) (person, error) {
+	pers := person{}
 
 	url := "https://eur.delve.office.com/mt/v3/people/" + studentNr + "%40student.saxion.nl"
 
@@ -56,7 +56,7 @@ func getJSON(studentNr string, cookie string) (Person, error) {
 	if err != nil {
 		return pers, err
 	}
-	defer res.Body.Close()				//Close the body when the function is done. 
+	defer res.Body.Close() //Close the body when the function is done.
 	body, _ := ioutil.ReadAll(res.Body)
 
 	pers.StudentNumber = studentNr
@@ -71,16 +71,16 @@ func selectFile() *os.File {
 		log.Fatal(err)
 	}
 	//fmt.Printf("%q", text)
-
-	text = strings.TrimSuffix(text, "\n")
+	text = strings.TrimSuffix(text, "\r\n") //Some terminals use \r\n as line breaks
+	text = strings.TrimSuffix(text, "\n")   //Others only use \n
 	fmt.Println(text)
 
 	csvFile, err := os.Open(text)
 	if err != nil {
 		//Can't open that file. Ask again.
 		fmt.Println("Errored on that.. Is your path correct?")
-		log.Fatal(err)
-		selectFile()
+		// log.Fatal(err)
+		return selectFile()
 	}
 	return csvFile
 }
@@ -90,7 +90,7 @@ func main() {
 	fileReader := csv.NewReader(bufio.NewReader(file))
 	//Ask for cookie
 	//The cookie can be retrieved by logging in to eur.delve.office.com and copying the value in the X-Delve-AuthEur cookie
-	//Use the Application tab in Chrome's devTools to read cookies. 
+	//Use the Application tab in Chrome's devTools to read cookies.
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("We'll need your X-Delve-AuthEur cookie value from eur.delve.office.com. Please copy the value here: ")
 	cookie, err := reader.ReadString('\n')
@@ -99,8 +99,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	cookie = strings.TrimSuffix(cookie, "\r\n")
 	cookie = strings.TrimSuffix(cookie, "\n")
-	
 	outputFile, err := os.Create("output.csv")
 
 	_, err = outputFile.WriteString("StudentNumber,FullName,Email,UserName,ProfileImageAddress,Department,AadObjectId,UserPrincipleName,ItemSource\r\n")
